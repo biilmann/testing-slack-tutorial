@@ -5,40 +5,53 @@ import './App.css';
 class SlackMessage extends Component {
   constructor(props) {
     super(props);
-    this.state = {loading: false, text: null, error: null, success: false};
+    this.state = { loading: false, text: null, error: null, success: false };
+  }
+
+  generateHeaders() {
+    const headers = { "Content-Type": "application/json" };
+    if (netlifyIdentity.currentUser()) {
+      return netlifyIdentity.currentUser().jwt().then((token) => {
+        return { ...headers, Authorization: `Bearer ${token}` };
+      })
+    }
+    return Promise.resolve(headers);
   }
 
   handleText = (e) => {
-    this.setState({text: e.target.value});
+    this.setState({ text: e.target.value });
   };
 
   handleSubmit = (e) => {
     e.preventDefault();
 
-    this.setState({loading: true});
-    fetch('/.netlify/functions/slack', {
-      method: "POST",
-      body: JSON.stringify({
-        text: this.state.text
+    this.setState({ loading: true });
+    this.generateHeaders().then((headers) => {
+      fetch('/.netlify/functions/slack', {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          text: this.state.text
+        })
       })
-    })
-      .then(response => {
-        if (!response.ok) {
-          response.text().then(err => {throw(err)});
-        }
-      })
-      .then(() => this.setState({loading: false, text: null, success: true, error: null}))
-      .catch(err => this.setState({loading: false, success: false, error: err.toString()}))
+        .then(response => {
+          if (!response.ok) {
+            response.text().then(err => { throw (err) });
+          }
+        })
+        .then(() => this.setState({ loading: false, text: null, success: true, error: null }))
+        .catch(err => this.setState({ loading: false, success: false, error: err.toString() }))
+    });
   }
 
   render() {
-    const {loading, text, error, success} = this.state;
+    const { loading, text, error, success } = this.state;
 
     return <form onSubmit={this.handleSubmit}>
       {error && <p><strong>Error sending message: {error}</strong></p>}
       {success && <p><strong>Done! Message sent to Slack</strong></p>}
       <p>
-        <label>Your Message: <br/>
+        <label>Your Message: <br />
           <textarea onChange={this.handleText} value={text}></textarea>
         </label>
       </p>
