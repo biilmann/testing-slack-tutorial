@@ -5,7 +5,7 @@ import './App.css';
 class SlackMessage extends Component {
   constructor(props) {
     super(props);
-    this.state = { loading: false, text: null, error: null, success: false };
+    this.state = { loading: false, text: '', error: null, success: false };
   }
 
   generateHeaders() {
